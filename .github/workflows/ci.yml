@@ -26,7 +26,7 @@ jobs:
           curl --fail http://localhost:8080
           docker stop devops-test
           docker rm devops-test
-deploy:
+  deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
 
