@@ -1,0 +1,55 @@
+name: DevOps CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t devops-web:test .
+
+      - name: Test container
+        run: |
+          docker run -d --name devops-test -p 8080:80 devops-web:test
+          sleep 5
+          curl --fail http://localhost:8080
+          docker stop devops-test
+          docker rm devops-test[200~name: DevOps CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t devops-web:test .
+
+      - name: Test container
+        run: |
+          docker run -d --name devops-test -p 8080:80 devops-web:test
+          sleep 5
+          curl --fail http://localhost:8080
+          docker stop devops-test
+          docker rm devops-test
