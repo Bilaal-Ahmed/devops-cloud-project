@@ -1,4 +1,4 @@
-name: DevOps CI
+name: DevOps CI/CD
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,3 +26,19 @@ jobs:
           curl --fail http://localhost:8080
           docker stop devops-test
           docker rm devops-test
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test SSH connection to EC2
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          KEY: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Connected to EC2 successfully"
+            hostname
+            whoami
+            docker --version
