@@ -26,19 +26,46 @@ jobs:
           curl --fail http://localhost:8080
           docker stop devops-test
           docker rm devops-test
-  deploy:
+deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test SSH connection to EC2
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
-          KEY: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Connected to EC2 successfully"
-            hostname
-            whoami
-            docker --version
+            set -e
+
+            cd ${{ secrets.EC2_PROJECT_PATH }}
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Building Docker image..."
+            docker build -t devops-web:latest .
+
+            echo "Stopping old container..."
+            docker stop devops-web || true
+
+            echo "Removing old container..."
+            docker rm devops-web || true
+
+            echo "Starting new container..."
+            docker run -d \
+              --name devops-web \
+              --restart unless-stopped \
+              -p 80:80 \
+              devops-web:latest
+
+            echo "Checking container..."
+            docker ps
+
+            echo "Testing application..."
+            sleep 5
+            curl --fail http://localhost
+
+            echo "Deployment successful!"
