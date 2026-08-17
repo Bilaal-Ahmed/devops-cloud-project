@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  IMAGE_NAME: bilaalahmed/devops-cloud-project
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -26,8 +29,35 @@ jobs:
           curl --fail http://localhost:8080
           docker stop devops-test
           docker rm devops-test
-  deploy:
+
+  build-and-push:
     needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t $IMAGE_NAME:${{ github.sha }} \
+            -t $IMAGE_NAME:latest \
+            .
+
+      - name: Push Docker images
+        run: |
+          docker push $IMAGE_NAME:${{ github.sha }}
+          docker push $IMAGE_NAME:latest
+
+  deploy:
+    needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
@@ -40,13 +70,11 @@ jobs:
           script: |
             set -e
 
-            cd ${{ secrets.EC2_PROJECT_PATH }}
+            echo "Logging in to Docker Hub..."
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-            echo "Pulling latest code..."
-            git pull origin main
-
-            echo "Building Docker image..."
-            docker build -t devops-web:latest .
+            echo "Pulling new Docker image..."
+            docker pull bilaalahmed/devops-cloud-project:${{ github.sha }}
 
             echo "Stopping old container..."
             docker stop devops-web || true
@@ -59,7 +87,7 @@ jobs:
               --name devops-web \
               --restart unless-stopped \
               -p 80:80 \
-              devops-web:latest
+              bilaalahmed/devops-cloud-project:${{ github.sha }}
 
             echo "Checking container..."
             docker ps
