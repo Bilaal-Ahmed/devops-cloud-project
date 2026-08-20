@@ -7,13 +7,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-north-1"
-}
-
-variable "ami_id" {
-  description = "Ubuntu AMI ID for the DevOps EC2 instance"
-  type        = string
-  default     = "ami-0aba19e56f3eaec05"
+  region = var.aws_region
 }
 
 resource "aws_security_group" "devops_sg" {
@@ -50,9 +44,9 @@ resource "aws_security_group" "devops_sg" {
 
 resource "aws_instance" "devops_server" {
   ami           = var.ami_id
-  instance_type = "t3.micro"
+  instance_type = var.instance_type
 
-  subnet_id              = "subnet-0ca3b49616f569adb"
+  subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.devops_sg.id]
 
   associate_public_ip_address = true
