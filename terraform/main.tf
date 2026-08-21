@@ -4,8 +4,13 @@ terraform {
       source = "hashicorp/aws"
     }
   }
-}
 
+  backend "s3" {
+    bucket = "bilaal-devops-terraform-state-2026"
+    key    = "devops-project/terraform.tfstate"
+    region = "eu-north-1"
+  }
+}
 provider "aws" {
   region = var.aws_region
 }
